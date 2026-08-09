@@ -1,0 +1,24 @@
+# Windows metadata
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Local outputs and previews
+outputs/
+preview/
+visio-safe/
+*.zip
+*.png
+*.pdf
+*.backup-*.vsdx
+final-validation.json
+svg-inventory.json
+
+# Local/private library state
+/svg-library/
+**/library.lock
+**/library.lock.json
+**/manifest.tmp*
+
+# Local debug artifacts
+.debug-journal.md

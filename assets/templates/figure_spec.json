@@ -1,0 +1,75 @@
+{
+  "reference": {
+    "widthPx": 1600,
+    "heightPx": 900
+  },
+  "page": {
+    "widthIn": 16,
+    "heightIn": 9
+  },
+  "styles": {
+    "module": {
+      "fill": "#F3F8FF",
+      "line": "#1F5FB8",
+      "lineWeightPt": 1.0,
+      "font": "Times New Roman",
+      "fontSizePt": 14,
+      "bold": true,
+      "align": "center"
+    },
+    "connector": {
+      "line": "#111111",
+      "lineWeightPt": 1.0
+    }
+  },
+  "shapes": [
+    {
+      "id": "input",
+      "kind": "rect",
+      "bboxPx": [120, 360, 240, 100],
+      "text": "Input",
+      "style": "module"
+    },
+    {
+      "id": "output",
+      "kind": "rect",
+      "bboxPx": [620, 360, 240, 100],
+      "text": "Output",
+      "style": "module"
+    },
+    {
+      "id": "upper-stage",
+      "kind": "rect",
+      "bboxPx": [1140, 120, 240, 100],
+      "text": "Upper stage",
+      "style": "module"
+    },
+    {
+      "id": "lower-stage",
+      "kind": "rect",
+      "bboxPx": [1140, 650, 240, 100],
+      "text": "Lower stage",
+      "style": "module"
+    }
+  ],
+  "connectors": [
+    {
+      "id": "horizontal-flow",
+      "from": "input",
+      "to": "output",
+      "fromConnection": "auto",
+      "toConnection": "auto",
+      "arrow": "end",
+      "style": "connector"
+    },
+    {
+      "id": "vertical-flow",
+      "from": "upper-stage",
+      "to": "lower-stage",
+      "fromConnection": "auto",
+      "toConnection": "auto",
+      "arrow": "end",
+      "style": "connector"
+    }
+  ]
+}

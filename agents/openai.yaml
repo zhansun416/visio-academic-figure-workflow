@@ -1,0 +1,4 @@
+interface:
+  display_name: "Visio Academic Figure Workflow"
+  short_description: "Rebuild paper figures as editable, topology-safe Visio VSDX."
+  default_prompt: "Use $visio-academic-figure-workflow to rebuild this figure as one editable VSDX with native nodes, page-aware glued connectors, and publication-ready typography."
