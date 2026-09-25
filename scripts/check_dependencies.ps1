@@ -4,22 +4,25 @@ param(
     [switch]$ProbeVisio,
     [switch]$RequireVisio,
     [switch]$RequireLibreOffice,
-    [switch]$AllowInconsistentLibrary
+    [switch]$AllowInconsistentLibrary,
+    [switch]$SkipSvgLibrary
 )
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'svg_library_common.ps1')
 
 $root = Resolve-SvgLibraryRoot $LibraryRoot
-$paths = Initialize-SvgLibraryInternal $root
-if (-not $AssetDirectory) { $AssetDirectory = $paths.icons }
-$state = Get-SvgLibraryState $root
+if (-not $SkipSvgLibrary) {
+    $paths = Initialize-SvgLibraryInternal $root
+    if (-not $AssetDirectory) { $AssetDirectory = $paths.icons }
+    $state = Get-SvgLibraryState $root
+}
 $checks = [ordered]@{}
 $checks.powerShell = [ordered]@{ passed = $true; version = $PSVersionTable.PSVersion.ToString() }
 $checks.compression = [ordered]@{ passed = $false; detail = $null }
 $checks.visio = [ordered]@{ passed = $null; detail = 'not requested' }
 $checks.visioStencils = [ordered]@{ passed = $null; detail = 'not requested'; files = @() }
-$checks.svgLibrary = [ordered]@{
+$checks.svgLibrary = if ($SkipSvgLibrary) { [ordered]@{ passed = $null; detail = 'not required for a native-only figure' } } else { [ordered]@{
     passed = ($state.consistent -or $AllowInconsistentLibrary)
     consistent = $state.consistent
     path = $root
@@ -28,8 +31,8 @@ $checks.svgLibrary = [ordered]@{
     unindexedCount = $state.unindexedFiles.Count
     missingCount = $state.missingFiles.Count
     hashMismatchCount = $state.hashMismatchFiles.Count
-}
-$checks.assetDirectory = [ordered]@{ passed = (Test-Path -LiteralPath $AssetDirectory); count = 0; path = [IO.Path]::GetFullPath($AssetDirectory) }
+} }
+$checks.assetDirectory = if ($SkipSvgLibrary) { [ordered]@{ passed = $null; detail = 'not requested' } } else { [ordered]@{ passed = (Test-Path -LiteralPath $AssetDirectory); count = 0; path = [IO.Path]::GetFullPath($AssetDirectory) } }
 $checks.libreOffice = [ordered]@{ passed = $false; path = $null }
 
 try {
@@ -88,7 +91,8 @@ if ($sofficeCommand) { $libreCandidates.Add($sofficeCommand.Source) }
 $librePath = @($libreCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1)
 if ($librePath.Count -gt 0) { $checks.libreOffice = [ordered]@{ passed = $true; path = $librePath[0] } }
 
-$required = @($checks.compression.passed, $checks.svgLibrary.passed, $checks.assetDirectory.passed)
+$required = @($checks.compression.passed)
+if (-not $SkipSvgLibrary) { $required += $checks.svgLibrary.passed; $required += $checks.assetDirectory.passed }
 if ($RequireVisio) { $required += [bool]$checks.visio.passed; $required += [bool]$checks.visioStencils.passed }
 if ($RequireLibreOffice) { $required += $checks.libreOffice.passed }
 $report = [ordered]@{ passed = (@($required | Where-Object { -not $_ }).Count -eq 0); checks = $checks }

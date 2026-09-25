@@ -13,7 +13,7 @@ These notes are based on the Windows Visio COM workflow used by this package.
 ## Safe construction pattern
 
 - Insert connector-bearing cards and nodes from a verified stencil master with `Page.Drop`; use `DrawRectangle` only for non-connectable decorative panels or when the stencil fallback is documented.
-- Apply this to every semantic object that participates in the topology, including arrows, process symbols, network symbols, containers, and callouts. Prefer a single connection-capable native Master over a visual composite of lines, rectangles, or SVG fragments.
+- Apply this to semantic objects that participate in the topology. Composite groups are appropriate for detailed structures: use a native frame or a designated native child as the connection anchor and keep the visual subcomponents editable. Do not force a complex source object into a single generic master at the expense of fidelity.
 - Prefer native stencil masters through `Page.Drop` for diamonds, circles, ellipses, and other standard geometry. Use four line segments only as a documented fallback when the verified stencil/master is unavailable, and place decision text as a separate text object when it improves editability.
 - Keep SVG, text, card, and connector objects separate so a missing import cannot hide text.
 - Drop a `Dynamic connector`, then glue its `BeginX` and `EndX` cells to source/target `Connections.Xn` cells with `GlueTo`; set arrowheads and routing after glue. Use explicit line segments only for decorative separators or a documented fallback.
@@ -30,6 +30,10 @@ These notes are based on the Windows Visio COM workflow used by this package.
 - Use `-MinimumFontSizePt 8` for figures intended for papers, then visually inspect the preview at the expected reduced publication size.
 
 ## Large-builder execution
+
+For dense scenes, read `dense-reconstruction.md` and `figure-spec.md`. The bundled renderer supports nested local-coordinate groups and explicit page-coordinate route bends. It constructs native groups bottom-up and raises cross-container edges above opaque frames. Manual routes use a separate native Geometry section, hiding the inherited route, so authored vertices remain inspectable after save/reopen. They retain the Dynamic connector master and glued ends; individual node movement still requires route review.
+
+Use `visRowLast = -2` when appending rows through `AddRow`; `-1` is an invalid/unspecified row, not the append constant. On this COM surface it can fail to create the intended rows without a helpful error. Validate created row counts and saved geometry. See [VisRowIndices](https://learn.microsoft.com/en-us/office/vba/api/visio.visrowindices).
 
 - Do not send a large builder as one long `powershell -Command` payload. Run a task-local `.ps1` file with explicit phase markers and a bounded session wait.
 - Keep shape helpers output-silent; accidental COM shape objects in the PowerShell pipeline can block or flood the caller.
