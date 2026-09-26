@@ -9,11 +9,11 @@ The public package starts with an empty `assets/svg-library/library.json`. Custo
 - Before publishing this package to GitHub, run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\audit_library_licenses.ps1 -PackageLibrary -PublicRelease
+python scripts/visio_workflow.py svg --library assets/svg-library audit --public-release
 ```
 
-`-PackageLibrary` audits the empty or curated library shipped inside the Skill. Omit it, or pass `-LibraryRoot`, to audit the persistent user library. A public-release audit requires a consistent manifest and zero review-required entries. Replace or remove every unknown-license asset before public release; do not infer permission from visual similarity or from the fact that an SVG was downloadable.
+`--library assets/svg-library` selects the packaged library. Omit the option, or pass another `--library` directory, to audit the persistent user library. A public-release audit requires a consistent manifest and zero review-required entries. Replace or remove every unknown-license asset before public release; do not infer permission from visual similarity or from the fact that an SVG was downloadable.
 
 ## Provenance
 
-When adding an icon, retain its upstream URL, package name, license, and SHA-256 hash in `library.json`. Use `add_svg_library.ps1` for additions to the persistent library, then manually correct the license and source metadata when the upstream information is available. Local source paths are omitted by default so customer or workstation paths are not leaked into a shared manifest; use `-IncludeSourcePath` only when that provenance is intentionally required. The public package's bootstrap directory and the user-level library are intentionally separate.
+When adding an icon, retain its upstream URL, package name, license, and SHA-256 hash in `library.json`. Use `visio_workflow.py svg register` for additions to the persistent library, then manually correct the license and source metadata when the upstream information is available. Local source paths are omitted by default so customer or workstation paths are not leaked into a shared manifest. The public package's bootstrap directory and the user-level library are intentionally separate.

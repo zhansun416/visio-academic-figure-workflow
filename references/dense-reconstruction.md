@@ -40,6 +40,10 @@ Choose native geometry appropriate to each object. Composite groups are valid fo
 
 First inspect the full page for aspect ratio, panel proportions, hierarchy, occupied area, density, and major connection paths. Then compare every region at a readable scale for individual elements, line breaks, small symbols, thickness, colors, spacing, clipping, and connector attachment. Side-by-side registered crops or a diagnostic overlay can help; do not stretch either image to hide a mismatch.
 
-Inspect the rendered VSDX after the final save and reopen. Grouping and rerouting can change geometry that looked correct during construction. The bundled `validate_scene_spec.ps1` catches source-spec-to-file drift, including missing objects, wrong endpoints, misplaced manual bends, and text changes. It does not claim image similarity, detect all text overflow, or prove that the source inventory was complete.
+Inspect the rendered VSDX after the final save and reopen. Grouping and rerouting can change geometry that looked correct during construction. The bundled `visio_workflow.py validate` catches source-spec-to-file drift, including missing objects, wrong endpoints, misplaced manual bends, and text changes. It does not claim image similarity, detect all text overflow, or prove that the source inventory was complete.
 
 Use the source ledger as the completion gate: all readable source items mapped and visually compared; all logical edges accounted for; no unexplained omissions or substitutions. If a supplied image is too blurred to resolve an item, record and explain that specific limitation rather than guessing. Without a real reference, a synthetic regression figure proves capabilities only and must not be described as proof of fidelity to the user's failed example.
+
+## Rich icons in dense figures
+
+Inventory every distinct source family (for example attacker, chip, edge appliance, database, shield, solar panel, turbine and map pin). Inspect multicolor fills and open stroke interiors after actual Visio import at small size. A few plain boxes are not an adequate regression set. Native import geometry can scale while absolute stroke weights remain unchanged; renderer tests must exercise this failure mode. Match assets to source crops and record specific differences. See `reconstruction-manifest.md` for machine-readable completion gates.

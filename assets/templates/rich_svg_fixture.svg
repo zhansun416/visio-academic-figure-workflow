@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <!-- Original MIT regression artwork: nested strokes, curves, colors, and open interiors. -->
+  <g fill="white" stroke="#007DC4" stroke-width="2">
+    <path d="M8 18v36c0 12 34 12 34 0V18Z"/>
+    <ellipse cx="25" cy="18" rx="17" ry="7"/>
+    <path d="M8 31c0 10 34 10 34 0M8 43c0 10 34 10 34 0" fill="none"/>
+  </g>
+  <g transform="translate(52 8)">
+    <path d="M3 8 17 2l14 6v17c0 11-10 18-14 22C12 43 3 36 3 25Z" fill="#FFF5CF" stroke="#282834" stroke-width="2"/>
+    <path d="m9 24 6 7 11-16" fill="none" stroke="#D06020" stroke-width="3"/>
+  </g>
+  <path d="M9 79h27l8 9H1Z" fill="#D00000"/>
+  <path d="M60 72h27l6 18H54Z" fill="#ECA010" stroke="#282834" stroke-width="1"/>
+  <path d="m68 73-2 16m12-16 3 16M57 82h33" stroke="white" fill="none" stroke-width="1"/>
+  <path d="M45 70h8" stroke="currentColor" stroke-width="2"/>
+</svg>

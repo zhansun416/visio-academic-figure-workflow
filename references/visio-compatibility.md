@@ -17,17 +17,17 @@ These notes are based on the Windows Visio COM workflow used by this package.
 - Prefer native stencil masters through `Page.Drop` for diamonds, circles, ellipses, and other standard geometry. Use four line segments only as a documented fallback when the verified stencil/master is unavailable, and place decision text as a separate text object when it improves editability.
 - Keep SVG, text, card, and connector objects separate so a missing import cannot hide text.
 - Drop a `Dynamic connector`, then glue its `BeginX` and `EndX` cells to source/target `Connections.Xn` cells with `GlueTo`; set arrowheads and routing after glue. Use explicit line segments only for decorative separators or a documented fallback.
-- In `scripts/render_figure.ps1`, `rect`, `oval`, `circle`, `diamond`, and `native` kinds use stencil Masters. Native and SVG shapes may set `angleDeg`. Connector specs may set `fromConnection` and `toConnection` to `auto`, a cardinal side, `X1`, or `Connections.X3`.
-- For the tested bundled basic-shape masters, `X1` is bottom, `X2` is right, `X3` is top, and `X4` is left. This ordering is not portable: customer VSDX files and custom Masters may add a center point, use `X5` for right, or assign a different order. Use `CellExistsU` before reading a row because `CellsU` may return an empty cell for a missing row instead of throwing. Transform every local `Connections.Xn/Yn` point with `Shape.XYToPage(x, y, xPrime, yPrime)` before classifying page-left/right/top/bottom. `visio_connection_common.ps1` implements these rules and uses a 0.001-inch edge tolerance so a nearly equal corner does not outrank a centered side point.
+- In `scripts/visio_tools/com_backend.py`, `rect`, `oval`, `circle`, `diamond`, and `native` kinds use stencil Masters. Native and SVG shapes may set `angleDeg`. Connector specs may set `fromConnection` and `toConnection` to `auto`, a cardinal side, `X1`, or `Connections.X3`.
+- For the tested bundled basic-shape masters, `X1` is bottom, `X2` is right, `X3` is top, and `X4` is left. This ordering is not portable: customer VSDX files and custom Masters may add a center point, use `X5` for right, or assign a different order. Use `CellExistsU` before reading a row because `CellsU` may return an empty cell for a missing row instead of throwing. Transform every local `Connections.Xn/Yn` point with `Shape.XYToPage(x, y, xPrime, yPrime)` before classifying page-left/right/top/bottom. `visio_tools/com_backend.py` implements these rules and uses a 0.001-inch edge tolerance so a nearly equal corner does not outrank a centered side point.
 - The renderer computes an automatic pair only when at least one endpoint is `auto`. Explicit `Xn`, `Connections.Xn`, and cardinal overrides remain available and are validated with `CellExistsU` before glue.
 - Keep branch labels separate from connector geometry and inspect `Yes`/`No` directions after rendering.
 
 ## Output validation
 
-- Use `validate_vsdx_output.ps1 -RequireGluedConnectors` to require both endpoints of every native dynamic connector to be glued.
-- Add `-RequireAxisAlignedConnectors` for orthogonal node layouts. It recursively checks native connectors, compares target centers in page coordinates, and rejects any remaining endpoint-axis deviation above `-AxisAlignmentToleranceIn`.
-- Use `-DisallowRasterMedia` for an SVG/native-vector-only deliverable.
-- Use `-MinimumFontSizePt 8` for figures intended for papers, then visually inspect the preview at the expected reduced publication size.
+- Use `visio_workflow.py validate --require-glued` to require both endpoints of every native dynamic connector to be glued.
+- Add `--axis-aligned` for orthogonal node layouts. It recursively checks native connectors, compares target centers in page coordinates, and rejects any remaining endpoint-axis deviation above `the internal axis tolerance`.
+- Use `--no-raster` for an SVG/native-vector-only deliverable.
+- Use `--min-font 8` for figures intended for papers, then visually inspect the preview at the expected reduced publication size.
 
 ## Large-builder execution
 
@@ -35,8 +35,10 @@ For dense scenes, read `dense-reconstruction.md` and `figure-spec.md`. The bundl
 
 Use `visRowLast = -2` when appending rows through `AddRow`; `-1` is an invalid/unspecified row, not the append constant. On this COM surface it can fail to create the intended rows without a helpful error. Validate created row counts and saved geometry. See [VisRowIndices](https://learn.microsoft.com/en-us/office/vba/api/visio.visrowindices).
 
-- Do not send a large builder as one long `powershell -Command` payload. Run a task-local `.ps1` file with explicit phase markers and a bounded session wait.
-- Keep shape helpers output-silent; accidental COM shape objects in the PowerShell pipeline can block or flood the caller.
+Do not assume `(0,0)` and `(Width,Height)` coincide with a Dynamic connector's endpoints. Its master can clamp small heights, leaving a gap at shallow slopes. Manual geometry converts `BeginX/BeginY` and `EndX/EndY` through the connector's inverse transform, including `Angle` and flips. Reopened validation compares visible endpoints with the glued endpoints.
+
+- Run task-local Python files with phase markers and bounded session waits.
+- Use typed pywin32 wrappers for coordinate output parameters. Keep COM proxies out of stdout JSON.
 - Emit one short marker before each SVG import and preflight unfamiliar assets individually. If a run stalls, use the last phase/icon marker to isolate the blocking asset or layer and terminate only the task-owned automation process.
 
 ## SVG import guidance
@@ -44,5 +46,11 @@ Use `visRowLast = -2` when appending rows through `AddRow`; `-1` is an invalid/u
 - Prefer local SVG files with `xmlns` and `viewBox`.
 - Preserve explicit multicolor fills, strokes, gradients, and layered paths.
 - If an SVG uses `currentColor` and imports blank or incomplete, create a derived Visio-safe copy with a controlled default color. Keep the source unchanged.
-- `render_figure.ps1` performs that `currentColor` conversion automatically and caches the derived copy by source hash and chosen color. Explicit multicolor SVG values are not recolored.
+- `visio_workflow.py render` performs that `currentColor` conversion automatically and caches the derived copy by source hash and chosen color. Explicit multicolor SVG values are not recolored.
 - Treat remote references, scripts, unresolved `<use>` elements, filters, masks, and animation as compatibility risks that require visual QA.
+
+## Python import and preview checks
+
+Visio can convert an SVG into native groups/paths. After resizing an imported group, scale each imported `LineWeight` by the import-to-target scale: Visio scales geometry but retains absolute stroke weights. Without this, tiny databases and shields appear as solid blobs although shape bounds pass validation. Preserve fill colors and inspect curves and nested groups after save/reopen. Non-scaling-stroke SVG semantics require a custom adapter; do not assume ordinary scaling.
+
+PNG previews use full-page Visio PDF export rendered by pypdfium2 at 144 DPI. This preserves the page canvas independently of saved user raster-export preferences. Content beyond the page can be clipped, so inspect bounds and the source ledger. SVG export retains temporary full-page bounds, but its viewBox should still be checked independently.

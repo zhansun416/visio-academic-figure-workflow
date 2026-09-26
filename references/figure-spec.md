@@ -4,7 +4,7 @@ The existing flat `figure_spec.json` remains supported. The renderer uses pixels
 
 ## Shapes and coordinates
 
-`shapes` contains objects with a globally unique `id`, `kind`, and `bboxPx: [x,y,width,height]`. Coordinates start at the upper-left. Supported kinds are `rect`, `oval`, `circle`, `diamond`, `native`, `text`, `line`, `svg-asset`, and `group`.
+`shapes` contains objects with a globally unique `id`, `kind`, and `bboxPx: [x,y,width,height]`. Coordinates start at the upper-left. Supported kinds are `rect`, `oval`, `circle`, `diamond`, `native`, `text`, `line`, `path`, `svg-asset`, and `group`.
 
 A `group` is a native frame plus a real Visio group containing its `children`. Child bboxes use the immediate parent's upper-left as the origin; they are translated, not scaled. Nested groups use the same rule. A connector targeting a group id glues to its native frame. Internal connectors and labels are included in their endpoints' lowest common group; cross-group connectors remain in their common ancestor or on the page. This preserves individual editability and grouped movement. Groups cannot set `angleDeg`; rotate individual native/SVG children if needed.
 
@@ -22,7 +22,7 @@ A `group` is a native frame plus a real Visio group containing its `children`. C
 
 The `solver` above occupies page pixels `[300,190,180,70]`. Put group titles in separate text children to control title position. Drawing order follows the declared objects, with a group's frame behind its children. Cross-container connectors are raised after grouping so opaque frames do not erase their visible segments. Choose routes that avoid covering unrelated text and nodes.
 
-Text supports `text`, `font`, `fontSizePt`, `fontColor`, `bold`, `italic`, `align` (`left`, `center`, `right`), `verticalAlign` (`top`, `middle`, `bottom`), and `textMarginPt`. Defaults are Times New Roman, 10 pt, centered, middle, and 2 pt margins. Fill/line/style fields work for text boxes too, including explicit label backgrounds. Use real JSON `\n` for line breaks. Rich text runs, equations, curved paths, and arbitrary polygons need a task-local native builder; do not approximate them silently.
+Text supports `text`, `font`, `fontSizePt`, `fontColor`, `bold`, `italic`, `align` (`left`, `center`, `right`), `verticalAlign` (`top`, `middle`, `bottom`), and `textMarginPt`. Defaults are Times New Roman, 10 pt, centered, middle, and 2 pt margins. Fill/line/style fields work for text boxes too, including explicit label backgrounds. Use real JSON `\n` for line breaks. Rich text runs and equations need native text parts or a task-local builder; do not flatten them silently. `path` accepts normalized `points: [[x,y], ...]` inside its bbox, with optional `closed: true`. It creates editable native geometry for polygons and sampled curves. Curve samples are an approximation and must be reviewed at output scale.
 
 `line` allows zero width or zero height for decorative axes and separators, but not both. It draws from the lower-left to the upper-right of its bbox. Logical connections belong in `connectors`.
 
@@ -50,9 +50,9 @@ Endpoint values may be `auto`, `left`, `right`, `top`, `bottom`, `Xn`, `Connecti
 
 ## Validation
 
-Run `preflight_figure_spec.ps1` before rendering. It validates unique ids across shapes and edges, native endpoint references, group expansion, numeric bounds, ports, and route data without Visio. Warnings identify children extending outside their group for review. It does not perform OCR or infer missing source content.
+Run `python scripts/visio_workflow.py preflight <spec>` before rendering. It validates unique ids across shapes and edges, native endpoint references, group expansion, numeric bounds, ports, and route data without Visio. Warnings identify children extending outside their group for review. It does not perform OCR or infer missing source content.
 
-The renderer stores ids in `User.SpecId`; `::group` and `::label` suffixes are reserved. Run `validate_scene_spec.ps1 -SpecPath ... -VsdxPath ...` after saving: it reopens the VSDX and checks object presence, nesting, text, center/size, edge targets, arrows, label positions, and explicit bends with a default tolerance of 1 reference pixel. Follow this with output validation and region-by-region visual comparison.
+The renderer stores ids in `User.SpecId`; `::group` and `::label` suffixes are reserved. Run `python scripts/visio_workflow.py validate <vsdx> --spec <spec>` after saving: it reopens the VSDX and checks object presence, nesting, text, center/size, edge targets, arrows, label positions, and explicit bends with a default tolerance of 1 reference pixel. Follow this with output validation and region-by-region visual comparison.
 
 ## Visio API references
 
