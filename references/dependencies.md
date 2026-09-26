@@ -1,31 +1,19 @@
 # Dependencies and portability
 
-## Required at runtime
+Python 3.10+ is the scripting runtime. Install `requirements.txt`: pywin32 on Windows, Pillow for comparison, pypdfium2 for full-page PNG previews. Native rendering/COM validation require Windows desktop Visio. SVG library, preflight and ZIP/XML/manifest inspection use the standard library. No command delegates to PowerShell.
 
-- Windows PowerShell 5.1 or PowerShell 7.
-- Microsoft Visio with COM automation enabled. The workflow is designed for Windows desktop Visio and does not require Visio Online. The installed Visio content must expose `BASIC_M.VSSX` (`Rectangle`, `Circle`, `Ellipse`, and `Diamond`) and `SSFLOW_M.VSSX` (`Dynamic connector`); set `VISIO_STENCIL_ROOT` when they are outside the normal Office tree.
-- A local working directory with write permission for temporary previews, manifests, and the final VSDX.
+Visio must expose `BASIC_M.VSSX` (`Rectangle`, `Circle`, `Ellipse`, `Diamond`) and `SSFLOW_M.VSSX` (`Dynamic connector`). Discovery scans Office installations; set `VISIO_STENCIL_ROOT` for custom locations. Use `check-env --probe-visio` to verify actual masters.
 
-## Bundled or optional
+The renderer owns a separate Visio application and closes only its documents/application. Makepy wrappers use a process-owned temporary cache; never delete another Office workflow's global cache. Phases go to stderr and JSON results to stdout and optional `--report`.
 
-- The public package ships an empty `assets/svg-library` bootstrap directory. The actual working library is initialized outside the Skill package so it persists across projects, conversations, and Skill updates.
-- LibreOffice is optional and only used for internal conversion or document diagnostics; it is not required to deliver a VSDX.
-- `iconfont-svg-finder` is an optional external skill. Use it only for missing icons or when the user explicitly requests icon searching.
+## Persistent SVG library
 
-## Persistent library location
+Default: the Windows user's actual Documents directory plus `Codex/svg-library` (or `~/Documents/Codex/svg-library` elsewhere). Override with `VISIO_FIGURE_SVG_LIBRARY` or `svg --library <directory> ...`. The public package has an empty bootstrap library; private installed caches must survive updates.
 
-By default, scripts use `%USERPROFILE%\Documents\Codex\svg-library`. Run `initialize_svg_library.ps1` once after installation. Set `VISIO_FIGURE_SVG_LIBRARY` to use another shared location. The path is user-level rather than project-level, so a new project or conversation can query the same approved collection.
+`svg init` creates a missing library. `svg sync` diagnoses unindexed/missing/duplicate/hash-mismatched entries. `svg sync --repair` indexes valid unindexed files as `unknown-review`; it never silently rewrites hashes or deletes missing assets. Writes use atomic replacement and a Python-process lock. Unrelated JavaScript/legacy writers must coordinate externally; they do not share this lock.
 
-Run `sync_svg_library.ps1` before drawing. The dependency check fails on unindexed files, missing files, or hash mismatches unless `-AllowInconsistentLibrary` is explicitly supplied for diagnosis. Manifest writes use a cross-process lock and atomic replacement so concurrent conversations do not silently overwrite one another.
+## Verification
 
-After installation, run `scripts\self_test.ps1`. It builds a disposable SVG library, tests complete-package short-circuiting and search, then creates and validates a real VSDX unless `-SkipVisio` is supplied. Its Visio tests cover horizontal and vertical auto-routing, explicit `Xn` compatibility, real-row enumeration, rotated and grouped endpoints, near-equal edge tolerance, glued connectors, and axis alignment. Use `-KeepArtifacts` only when the generated preview or VSDX needs inspection.
+`python -m unittest discover -s tests -v` tests portable contracts and negative cases. `python scripts/self_test.py --output <work>/regression --visio` renders/reopens Visio fixtures in separate processes. Standard hosted CI runners can run portable tests only.
 
-## External library override
-
-Set `VISIO_FIGURE_SVG_LIBRARY` to point to a user-maintained persistent SVG library when desired. If it is unset, the scripts use the default user-level path above. This keeps the Skill shareable while allowing each user or organization to maintain a larger private collection.
-
-The local installed copy may contain a curated personal cache. That cache is intentionally not part of the public GitHub package.
-
-## Runtime versus authoring dependencies
-
-The runtime scripts are PowerShell and do not require Python. Python plus PyYAML is only needed for the optional Skill-authoring `quick_validate.py` check, not for reconstructing or validating a Visio figure.
+Skill-authoring validation optionally needs PyYAML. LibreOffice is not needed for VSDX. `iconfont-svg-finder` is optional for missing assets or explicit icon searches.

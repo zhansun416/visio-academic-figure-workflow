@@ -1,99 +1,92 @@
 ---
 name: visio-academic-figure-workflow
-description: Rebuild academic flowcharts, frameworks, and methodology figures as editable Visio VSDX files from reference images, customer SVG packages, persistent SVG libraries, and existing Visio sources. Use for paper-ready Visio reconstruction, SVG inventory and matching, native connection-point nodes, glued dynamic connectors, typography enforcement, visual QA, and single-file VSDX delivery.
+description: Reconstruct academic diagrams as editable Visio VSDX with Python, including dense multi-panel figures, nested modules, rich SVG icons, repeated small elements, cross-links, and feedback loops. Use for reference-image reconstruction, native topology, SVG asset matching, and source-led visual verification.
 ---
 
 # Visio academic figure workflow
 
-Deliver one editable `.vsdx`. Use PNG/SVG/PDF only for internal preview or diagnostics unless the user explicitly requests them.
+Deliver an editable `.vsdx`. Keep specs, ledgers, previews and comparison reports in the working directory unless requested. Run Python commands from this skill's directory with absolute paths for task inputs and outputs.
 
-## Non-negotiable output rules
+## Fidelity and editability
 
-- Treat the reference image as the layout authority; rebuild the page when an existing VSDX fights the reference.
-- Use Times New Roman for English text. Use sentence case and preserve true acronyms such as `EV`, `SOC`, `SOCP-OPF`, `OPF`, and `V2G`.
-- Keep topology nodes, connectors, decorative icons, and labels editable. Use SVG only as a decorative icon; do not use an imported SVG as a logical connector endpoint.
-- Use a native connection-capable Master for each logical node and a native `Dynamic connector` for each logical edge. Glue `BeginX` and `EndX` to explicit `Connections.Xn` cells. Never assume that `X1`–`X4` mean the same directions in a customer or custom Master; resolve cardinal points from the actual `Connections.Xn/Yn` coordinates.
-- Use coordinate-drawn lines only for decorative separators or a documented fallback.
-- Inspect an internal rendered preview before final delivery. A successful COM save is not visual proof.
+- The source governs layout, wording, capitalization, notation, colors and density. An editable rough diagram is intermediate. Never collapse repeated objects, omit small labels or substitute a generic icon for a chart.
+- Preserve source typography. Times New Roman is a fallback, not a rule to override a visible source font. Scale page and font sizes together; do not enlarge tiny labels to a fixed minimum and distort the source.
+- Text, cells, charts, circuits, node groups and glued connectors should be native. Decorative SVGs are supported. Inspect the saved package to establish whether Visio imported each as native geometry or retained a foreign picture. A picture is not a native shape; a native group alone does not prove faithful geometry.
+- Logical nodes use native connection-capable Masters; edges use native Dynamic connectors. Attach icon-bearing nodes to native frames, not imported SVG internals. Native lines/paths may represent circuit primitives and decorative strokes.
+- Reopen, validate, render and inspect every critical region. COM success and object counts cannot prove visual fidelity.
 
-## 1. Initialize and verify dependencies
+## 1. Inventory the original source
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\initialize_svg_library.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\sync_svg_library.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check_dependencies.ps1 -RequireVisio
-powershell -ExecutionPolicy Bypass -File .\scripts\self_test.ps1
+Read [dense-reconstruction.md](references/dense-reconstruction.md) for dense sources or feedback about coarse results. Before building the spec, inventory each source region: labels, repeated counts, icons and visual features, symbols, topology and uncertain details. Use [reconstruction-manifest.md](references/reconstruction-manifest.md) for the source ledger and draft/delivery gates.
+
+Use source pixels and aspect ratio. Inspect full resolution and readable crops. Build the most detail-sensitive region first and compare before repeating motifs. Unreadable details stay explicitly unresolved; do not invent exact measurements from blurred marks.
+
+## 2. Check Python and Visio
+
+```text
+python -m pip install -r requirements.txt
+python scripts/visio_workflow.py check-env --probe-visio
 ```
 
-The persistent library defaults to `%USERPROFILE%\Documents\Codex\svg-library`. Override it with `VISIO_FIGURE_SVG_LIBRARY`. Read `references/dependencies.md` when installing on another computer.
+Python 3.10+ is required. Rendering/COM validation need Windows desktop Visio and pywin32. Preflight, SVG library and package/manifest inspection work without Visio; comparison needs Pillow and full-page PNG previews need pypdfium2. See [dependencies.md](references/dependencies.md). No command delegates to PowerShell.
 
-## 2. Apply the SVG gate
+## 3. Match a sufficiently rich SVG set
 
-Inspect customer assets first:
+Inventory distinct icon families first. Record each source crop, candidate, match observations and unresolved differences. Judge silhouette, internal detail, stroke/fill, colors and optical size. Keyword matches are insufficient. Do not reuse a generic symbol for unrelated source objects.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\prepare_svg_assets.ps1 `
-  -SvgDirectory <customer-svg-directory> `
-  -ManifestPath <work>\svg-inventory.json `
-  -VisioSafeDirectory <work>\visio-safe-svg `
-  -CompleteSet
+1. Inspect supplied SVGs first. A complete usable package skips external searches.
+2. Query the persistent library. Unknown-license candidates are not permission to redistribute.
+3. Search missing families with `iconfont-svg-finder` when applicable or explicit candidate queries. Accurate hand-authored SVG details are acceptable; record source provenance and uncertainty.
+4. Render representative multi-path, stroked, nested, multicolor and small-scale assets in Visio. Inspect icon interiors, not only outer bounds. Thin strokes and empty interiors must survive import/resizing.
+
+```text
+python scripts/visio_workflow.py svg init
+python scripts/visio_workflow.py svg sync
+python scripts/visio_workflow.py svg find "database shield solar wind"
+python scripts/visio_workflow.py svg prepare <assets> --safe-dir <work>/visio-safe --complete
+python scripts/visio_workflow.py svg candidates "solar panel" <work>/candidates --download 3
+python scripts/visio_workflow.py svg register <assets> --source-label <source> --source-url <url> --license <license> --tags <tags>
 ```
 
-Use this order while this Skill is active:
+Preserve explicit multicolor values. Resolve `currentColor` in a derived copy; keep originals intact. Unsupported effects and risky references fail preflight; do not silently rasterize. Review warnings before declaring completeness. See [asset-licensing.md](references/asset-licensing.md).
 
-1. Reuse a complete, valid customer SVG set and skip all searching.
-2. Reuse valid customer assets, then query the persistent library for explicit gaps:
+## 4. Build the native scene
 
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\scripts\find_svg_library.ps1 -Query <keywords>
-   ```
+Read [figure-spec.md](references/figure-spec.md). Templates demonstrate structure, not layouts to impose on the source. Use task-local Python loops to expand repeated motifs into individual editable objects. Native groups, paths, ports, route bends, self-loops and separate labels are supported.
 
-3. If gaps remain, use `find_icon_candidates.ps1` for a small Iconify candidate set.
-4. Invoke `iconfont-svg-finder` only for unresolved icons or when the user explicitly requests it.
-
-Save only approved assets to the persistent library through `add_svg_library.ps1`. Keep source, license, and hash metadata. Run `sync_svg_library.ps1 -Repair` only after reviewing unindexed files.
-
-## 3. Preserve SVG color and compatibility
-
-- Preserve explicit fills, strokes, gradients, and layers.
-- Replace `currentColor` only in a derived Visio-safe copy when needed; keep the source unchanged. `render_figure.ps1` creates a reusable hash-and-color-keyed copy under `%LOCALAPPDATA%\Codex\visio-academic-figure-workflow\svg-cache` automatically.
-- Keep explicit multicolor fills, strokes, gradients, and layers unchanged; validate them through the rendered preview.
-- Reject scripts, remote references, unresolved `<use>`, and SVGs with unsupported compatibility-risk elements until corrected or individually preflighted in Visio.
-- Read `references/asset-licensing.md` before redistributing any library.
-
-## 4. Rebuild with native topology
-
-- Edit a supplied VSDX when its native geometry remains useful; otherwise build a new page.
-- Use `assets/templates/figure_spec.json` with `scripts/render_figure.ps1` for repeatable geometry. It accepts relative paths, absolute SVG paths, and `library:<file.svg>` references.
-- For custom figures, use a task-local `.ps1` builder with short phase markers. Keep shape helpers output-silent and emit one marker before each unfamiliar SVG import.
-- Use native cards or nodes as connector anchors and place decorative SVG icons separately. Do not waste time hunting for a domain-specific stencil when a native topology node plus a decorative icon preserves both editability and visual fidelity.
-- `render_figure.ps1` defaults connector endpoints to `auto`. It enumerates only real `Connections.Xn/Yn` rows, transforms points to page coordinates, and resolves left/right/top/bottom with a small edge tolerance. This remains correct for reordered, inset, rotated, and grouped shapes. Custom COM builders should dot-source `scripts/visio_connection_common.ps1` and call `Get-VisioAutoConnectionPair` instead of hard-coding `X1`–`X4`.
-- Use optional `angleDeg` on native or SVG spec shapes. Keep explicit `Xn`, `Connections.Xn`, and cardinal endpoint overrides when a figure requires a deliberate route; auto-resolution runs only for endpoints set to `auto`.
-- Route and review sequential edges, branches, feedback loops, output edges, arrow direction, and connection-point attachment.
-
-Read `references/visio-compatibility.md` before writing or debugging a custom COM builder.
-
-## 5. Validate and finalize
-
-After visual QA, run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\validate_vsdx_output.ps1 `
-  -VsdxPath <output>\figure-final.vsdx `
-  -OutputDirectory <output> -RequireSingleOutput `
-  -RequireGluedConnectors -DisallowRasterMedia -MinimumFontSizePt 8 `
-  -ReportPath <work>\final-validation.json
+```text
+python scripts/visio_workflow.py --report <work>/preflight.json preflight <work>/figure.json
+python scripts/visio_workflow.py --report <work>/render.json render <work>/figure.json <output>/figure.vsdx --preview <work>/preview.png
 ```
 
-Fix missing icons, clipping, overlaps, unglued endpoints, wrong arrows, small text, wrong fonts, and unintended raster media before delivery. Use `finalize_output.ps1` only after validation; the output directory must contain exactly one final `.vsdx`.
+Use native frames with icons, labels and details as children. Reserve separate lanes/ports for cross-links and loops. Crossings are not junctions. Preserve source layering and avoid global auto-layout. See [visio-compatibility.md](references/visio-compatibility.md) for custom native builders and SVG stroke scaling.
 
-For diagrams whose connected node centers are intended to share an exact horizontal or vertical axis, also pass `-RequireAxisAlignedConnectors`. This catches a glued connector that is still visibly slanted because the wrong connection-point row was selected.
+## 5. Inspect actual objects and compare images
 
-## Bundled resources
+```text
+python scripts/visio_workflow.py --report <work>/validation.json validate <output>/figure.vsdx --spec <work>/figure.json --require-glued --no-raster
+python scripts/visio_workflow.py --report <work>/objects.json inspect <output>/figure.vsdx
+python scripts/visio_workflow.py preview <output>/figure.vsdx <work>/preview.png
+python scripts/compare_renders.py <source> <work>/preview.png <work>/comparison --manifest <work>/source-manifest.json
+```
 
-- `scripts/`: library synchronization, SVG inspection/search, Visio rendering, validation, self-test, and finalization.
-- `assets/svg-library/`: local package cache; the public distribution should replace it with an empty bootstrap library.
-- `assets/templates/figure_spec.json`: native-node and glued-connector example.
-- `references/visio-compatibility.md`: native Masters, COM execution, SVG preflight, and fallback rules.
-- `references/asset-licensing.md`: provenance and release auditing.
-- `references/dependencies.md`: installation and persistent-library configuration.
+Map inventoried source components to **actual saved names/types**, including wrappers and imported children. Keep the source inventory independent; never generate it solely from output. Compare full-page and region side-by-side, overlay and difference images. Aspect mismatches fail instead of stretching. Metrics are diagnostic, not pass thresholds.
+
+Inspect each critical region and then the whole source again. Correct omissions, broken SVG strokes, substituted icons, clipping, density, fonts and arrows. Recheck saved/reopened output and readable crops of every rich SVG family. Incomplete/unreviewed content blocks delivery. Record specific evidence and limitations rather than automatically marking reviews verified.
+
+```text
+python scripts/visio_workflow.py --report <work>/delivery-gate.json inspect <output>/figure.vsdx --manifest <work>/source-manifest.json --mode delivery
+```
+
+Delivery rejects incomplete/deferred content, undeclared editability changes, missing/type-mismatched mappings, unmapped objects and unverified source reviews. It cannot establish the truth of notes or detect content never inventoried.
+
+Use `--expected-font`, `--min-font` and `--allowed-acronyms` only when grounded in the source/user requirements. `--axis-aligned` applies only when node centers should share axes. `finalize <vsdx> <archive>` moves extra top-level files outside a dedicated delivery directory; use after visual QA.
+
+## Regression checks
+
+```text
+python -m unittest discover -s tests -v
+python scripts/self_test.py --output <work>/regression --visio
+```
+
+Synthetic regressions prove capabilities, not source fidelity. User images and derived private assets remain local unless publication is authorized.

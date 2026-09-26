@@ -4,6 +4,7 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # Local outputs and previews
+work/
 outputs/
 preview/
 visio-safe/
@@ -22,3 +23,6 @@ svg-inventory.json
 
 # Local debug artifacts
 .debug-journal.md
+__pycache__/
+*.py[cod]
+**/.visio-python.lock

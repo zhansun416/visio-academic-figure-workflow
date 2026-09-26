@@ -1,78 +1,42 @@
 # Visio Academic Figure Workflow
 
-Rebuild academic flowcharts and framework figures as editable Visio VSDX files from reference images, SVG packages, persistent SVG libraries, or existing Visio sources.
+Reconstruct dense reference diagrams as editable Visio VSDX with Python. Source-led inventories and regional visual review preserve detailed panels, repeated marks, rich icons, labels and topology.
 
-> Final figures may still require minor manual fine-tuning.
+## Capabilities
 
-## What it provides
+- Native nested groups, named ports, glued connectors, feedback routes and independent labels.
+- Native paths, circuits, editable text, matrices and chart marks.
+- Rich SVG preparation, import stroke scaling and a persistent library with provenance/hashes.
+- Saved-file verification of groups, text, geometry, endpoint targets, arrows and bends.
+- Source manifests with actual object mappings and draft/delivery gates.
+- Full-page/regional side-by-side, overlay and difference images without stretching.
 
-- Paper-ready, editable VSDX reconstruction for academic flowcharts and framework figures.
-- Times New Roman typography enforcement for English figure text.
-- Native Visio nodes and glued dynamic connectors, with explicit connection-point handling to reduce misplaced arrows.
-- A customer-SVG-first asset gate: when a complete usable SVG package is supplied, iconfont search is skipped.
-- Support for monochrome, multicolor, and `currentColor` SVG assets, with preparation and compatibility checks for Visio.
-- A persistent user SVG library that can be reused across projects and conversations.
-- Validation for asset completeness, SVG usability, connection integrity, and final VSDX output.
-
-## Requirements
-
-- Windows 10/11.
-- Microsoft Visio desktop (required for VSDX generation and COM-based validation).
-- Windows PowerShell 5.1 or PowerShell 7.
-- Optional: Python 3.10+ and PyYAML for authoring-time validation of the skill package.
-
-This workflow is designed for local Windows execution. GitHub Actions cannot perform the Visio COM steps on a standard hosted runner.
+The source-manifest and comparison approach draws from `image-to-editable-ppt`; see [third-party notices](THIRD_PARTY_NOTICES.md). Structural checks alone do not establish visual fidelity.
 
 ## Quick start
 
-Run these commands from the repository root:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\initialize_svg_library.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check_dependencies.ps1 -RequireVisio
-powershell -ExecutionPolicy Bypass -File .\scripts\self_test.ps1
-```
-
-The default persistent SVG library is created under:
+Python 3.10+, Pillow, pypdfium2 for PNG previews, and Windows desktop Visio with pywin32 for native rendering/validation. Portable inspection and library operations do not require Visio.
 
 ```text
-%USERPROFILE%\Documents\Codex\svg-library
+python -m pip install -r requirements.txt
+python scripts/visio_workflow.py check-env --probe-visio
+python -m unittest discover -s tests -v
+python scripts/self_test.py --output work/regression --visio
+python scripts/visio_workflow.py preflight assets/templates/dense_figure_spec.json
+python scripts/visio_workflow.py render assets/templates/dense_figure_spec.json work/dense.vsdx --preview work/dense.png
+python scripts/visio_workflow.py validate work/dense.vsdx --spec assets/templates/dense_figure_spec.json --require-glued --no-raster
 ```
 
-Set `VISIO_FIGURE_SVG_LIBRARY` to use another shared library location. The public repository contains only an empty bootstrap library; customer-owned or project-specific SVGs should be added locally after checking their licensing.
+Run from the repository root. `--report <path>` precedes the subcommand. See [SKILL.md](SKILL.md), [figure spec](references/figure-spec.md), [source manifest](references/reconstruction-manifest.md), [dependencies](references/dependencies.md) and [SVG licensing](references/asset-licensing.md).
 
-## Typical asset workflow
+The persistent library defaults to Documents/Codex/svg-library. Override with `VISIO_FIGURE_SVG_LIBRARY`. Private SVG collections and user images are not included publicly.
 
-1. Inspect the reference image and supplied assets.
-2. Use the supplied SVG package first. If it covers the required icons, skip iconfont search.
-3. If assets are missing, search and collect additional SVG candidates, then prepare them for Visio.
-4. Build the figure with explicit node roles and connection points.
-5. Validate typography, layout, arrows, asset coverage, and VSDX output.
-6. Open the final VSDX in Visio and make any remaining fine adjustments required by the target paper layout.
+## Migration
 
-Useful commands:
+Former `.ps1` entry points are replaced by `visio_workflow.py`, `compare_renders.py` and `self_test.py`. Existing flat/dense specs and `library.json` records remain supported. No command launches PowerShell. Native rendering still requires Windows desktop Visio.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\sync_svg_library.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\find_svg_library.ps1 -Query "calendar parking charging"
-powershell -ExecutionPolicy Bypass -File .\scripts\check_dependencies.ps1 -RequireVisio
-powershell -ExecutionPolicy Bypass -File .\scripts\self_test.ps1
-```
-
-See [`SKILL.md`](SKILL.md) for the complete workflow and script routing. See [`references/dependencies.md`](references/dependencies.md) and [`references/asset-licensing.md`](references/asset-licensing.md) for dependency and asset-use guidance.
-
-## Repository layout
-
-```text
-SKILL.md                         Main workflow instructions
-agents/openai.yaml               Skill metadata
-scripts/                         PowerShell workflow and validation scripts
-assets/templates/                Figure specification template
-assets/svg-library/              Empty public bootstrap library
-references/                      Dependency, licensing, and Visio notes
-```
+Manual bends need review when individual nodes move. SVGs can become native groups or foreign media depending on Visio/source; saved-package inspection is authoritative. Review icon interiors and the original source before delivery.
 
 ## License
 
-MIT License. See [`LICENSE`](LICENSE).
-
+MIT; see [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
